@@ -1,0 +1,8 @@
+server:
+  port: 6969
+  list:
+    - 123
+    - 321
+  item:
+    item2: 123
+  null:
