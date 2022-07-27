@@ -3,7 +3,7 @@ package cn.lz.web.demo;
 import cn.lz.web.core.Application;
 
 /**
- * TODO
+ * 启动类
  *
  * @author 孔胜
  * @version 版权 Copyright(c)2022 LZJ
