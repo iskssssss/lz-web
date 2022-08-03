@@ -21,11 +21,13 @@ import java.util.Objects;
  * @date 2022/7/11 10:37
  */
 public class Environment {
+    public static final String BANNER_PATH = "/banner.txt";
+    public static final String APPLICATION_PATH = "/application.yml";
 
     public final Map<String, Object> props = new HashMap<>();
 
     public void init(Class<?> primarySource) throws IOException {
-        URL resource = primarySource.getResource("/application.yml");
+        URL resource = primarySource.getResource(APPLICATION_PATH);
         InputStream inputStream = resource.openStream();
         Yaml yaml = new Yaml();
         Object applicationObject = yaml.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
@@ -101,6 +103,8 @@ public class Environment {
             char c = valuePath.charAt(i);
             if ((c >= 'A' && c <= 'Z') && i > 0) {
                 sb.append('-');
+                sb.append((char) (((int) c) + 32));
+                continue;
             }
             sb.append(c);
         }

@@ -14,4 +14,11 @@ import java.lang.annotation.*;
 @Documented
 public @interface Value {
     String value();
+
+    /**
+     * 是否必须
+     *
+     * @return 默认必须
+     */
+    boolean required() default true;
 }

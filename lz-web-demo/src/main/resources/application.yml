@@ -6,3 +6,7 @@ server:
   item:
     item2: 123
   null:
+
+lz:
+  file:
+    file-save-path: D:\upload\

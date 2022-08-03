@@ -5,6 +5,7 @@ import cn.lz.beans.anno.Inject;
 import cn.lz.beans.anno.Register;
 import cn.lz.beans.anno.Value;
 import cn.lz.beans.exception.BeanException;
+import cn.lz.beans.scanner.Scanner;
 import cn.lz.tool.core.string.StringUtil;
 import cn.lz.tool.reflect.ReflectUtil;
 import org.slf4j.Logger;
@@ -71,12 +72,11 @@ public abstract class AbstractBeanFactory implements BeanFactory {
         Map<String, Object> result = new LinkedHashMap<>();
         Set<Map.Entry<String, Object>> entrySet = beans.entrySet();
         for (Map.Entry<String, Object> entry : entrySet) {
-            String key = entry.getKey();
             Object value = entry.getValue();
-            if (!value.getClass().isAnnotationPresent(annotation)) {
+            if (!Scanner.isAnnotation((Class<? extends Annotation>) value.getClass(), annotation)) {
                 continue;
             }
-            result.put(key, value);
+            result.put(entry.getKey(), value);
         }
         return result;
     }
@@ -118,7 +118,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
             Value value = parameter.getAnnotation(Value.class);
             Class<?> type = parameter.getType();
             String simpleName = type.getSimpleName();
-            Object obj = getVal(simpleName, type, value == null ? null : value.value());
+            Object obj = getVal(simpleName, type, value);
             if (obj == null) {
                 throw new RuntimeException("bean 初始化失败");
             }
@@ -154,7 +154,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
             }
             Class<?> fieldType = field.getType();
             String simpleName = fieldType.getSimpleName();
-            Object val = getVal(simpleName, fieldType, value == null ? null : value.value());
+            Object val = getVal(simpleName, fieldType, value);
             try {
                 field.setAccessible(true);
                 field.set(bean, val);
@@ -197,7 +197,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
         int length = parameters.length;
         Object[] values = new Object[length];
         if (value != null) {
-            String valuePath = value.value();
+            Value valuePathTemp = value;
             boolean isOne = length == 1;
             if (!isOne) {
                 throw new RuntimeException("@Value注解下的参数过多。");
@@ -206,10 +206,9 @@ public abstract class AbstractBeanFactory implements BeanFactory {
                 Parameter parameter = parameters[i];
                 Class<?> type = parameter.getType();
                 String simpleName = type.getSimpleName();
-                String valuePathTemp = valuePath;
                 Value paramValue = parameter.getAnnotation(Value.class);
                 if (paramValue != null) {
-                    valuePathTemp = paramValue.value();
+                    valuePathTemp = paramValue;
                 }
                 values[i] = getVal(simpleName, type, valuePathTemp);
             }
@@ -219,15 +218,15 @@ public abstract class AbstractBeanFactory implements BeanFactory {
                 Class<?> type = parameter.getType();
                 String simpleName = type.getSimpleName();
                 Value paramValue = parameter.getAnnotation(Value.class);
-                values[i] = getVal(simpleName, type, paramValue == null ? null : paramValue.value());
+                values[i] = getVal(simpleName, type, paramValue);
             }
         }
         return values;
     }
 
-    private Object getVal(String name, Class<?> type, String valuePath) throws BeanException {
-        if (StringUtil.isNotEmpty(valuePath)) {
-            return this.analysisValue(type, valuePath);
+    private Object getVal(String name, Class<?> type, Value value) throws BeanException {
+        if (StringUtil.isNotEmpty(value)) {
+            return this.analysisValue(type, value);
         }
         Object val = this.inCreateMap.get(name);
         if (val == null) {
@@ -246,5 +245,5 @@ public abstract class AbstractBeanFactory implements BeanFactory {
         return false;
     }
 
-    protected abstract Object analysisValue(Class<?> type, String valuePath);
+    protected abstract Object analysisValue(Class<?> type, Value value);
 }

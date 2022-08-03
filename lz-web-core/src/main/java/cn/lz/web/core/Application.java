@@ -48,6 +48,7 @@ public class Application {
     private final EventLoopGroup workerGroup;
 
     private final Class<?> primarySource;
+    private String[] args;
 
     /**
      * bean工厂
@@ -62,7 +63,12 @@ public class Application {
     private final RouterCore routerCore;
 
     public Application(Class<?> primarySource) throws Exception {
+        this(primarySource, null);
+    }
+
+    public Application(Class<?> primarySource, String[] args) throws Exception {
         this.primarySource = primarySource;
+        this.args = args;
 
         this.environment = new Environment();
         this.environment.init(this.primarySource);
@@ -73,46 +79,72 @@ public class Application {
 
         this.boosGroup = new NioEventLoopGroup(1);
         this.workerGroup = new NioEventLoopGroup(8);
+
+        this.port = environment.getValInt("server.port", 6969);
     }
 
-    public void start(String[] args) throws Exception {
-        this.start(environment.getValInt("server.port", 6969), args);
-    }
-
-    public void start(int port, String[] args) throws Exception {
-        this.port = port;
+    /**
+     * 启动Web容器
+     *
+     * @return Web容器
+     * @throws Exception 启动异常
+     */
+    public Application start() throws Exception {
+        if (startStatus.get()) {
+            logger.info("Web容器已启动，请勿重复启动。");
+            return this;
+        }
         Package aPackage = this.primarySource.getPackage();
         this.scanBean(aPackage.getName());
         this.initRouter();
         new FastThreadLocalThread(this::_startServer).start();
-        while (startStatus.get() == false) {}
+        while (startStatus.get() == false) {
+        }
         logger.info("start success - port:" + this.port);
-        URL resource = this.primarySource.getResource("/banner.txt");
+        URL resource = this.primarySource.getResource(Environment.BANNER_PATH);
         if (resource == null) {
-            return;
+            return this;
         }
         System.out.println(FileUtil.readString(resource, StandardCharsets.UTF_8));
+        return this;
     }
 
     /**
-     * 扫描Bean
+     * 启动Web容器
      *
-     * @param packageName 扫描路径
-     * @throws Exception 异常
+     * @param args 启动参数
+     * @return Web容器
+     * @throws Exception 启动异常
      */
-    private void scanBean(String packageName) throws Exception {
-        Set<Class<?>> classes = Scanner.getAnnotationClasses(packageName, Bean.class);
-        for (Class<?> aClass : classes) {
-            this.beanFactory.createBean(aClass, aClass.getSimpleName());
-        }
+    public Application start(String[] args) throws Exception {
+        this.args = args;
+        return this.start();
     }
 
     /**
-     * 初始化路由信息
+     * 启动Web容器
+     *
+     * @param port 端口
+     * @return Web容器
+     * @throws Exception 启动异常
      */
-    private void initRouter() {
-        Map<String, Object> routerMap = this.beanFactory.getBeanByAnnotation(Router.class);
-        routerCore.initRouter(routerMap);
+    public Application start(int port) throws Exception {
+        this.port = port;
+        return this.start();
+    }
+
+    /**
+     * 启动Web容器
+     *
+     * @param port 端口
+     * @param args 启动参数
+     * @return Web容器
+     * @throws Exception 启动异常
+     */
+    public Application start(int port, String[] args) throws Exception {
+        this.port = port;
+        this.args = args;
+        return this.start();
     }
 
     public BeanFactory getBeanFactory() {
@@ -127,6 +159,29 @@ public class Application {
         return routerCore;
     }
 
+    /**
+     * 扫描Bean
+     *
+     * @param packageName 扫描路径
+     * @throws Exception 异常
+     */
+    private void scanBean(String packageName) throws Exception {
+        Set<Class<?>> classes = Scanner.getAnnotationClasses(packageName, Bean.class);
+        for (Class<?> aClass : classes) {
+            this.beanFactory.createBean(aClass, aClass.getSimpleName());
+        }
+    }
+    /**
+     * 初始化路由信息
+     */
+    private void initRouter() {
+        Map<String, Object> routerMap = this.beanFactory.getBeanByAnnotation(Router.class);
+        routerCore.initRouter(routerMap);
+    }
+
+    /**
+     * 启动服务
+     */
     private void _startServer() {
         try {
             // 启动异常监听服务
@@ -144,9 +199,12 @@ public class Application {
             e.printStackTrace();
         }
     }
-
+    /**
+     * 关闭
+     */
     public void stop() {
         if (!startStatus.get()) {
+            logger.info("Web容器已关闭。");
             return;
         }
         startStatus.set(false);
@@ -163,8 +221,19 @@ public class Application {
      * @throws Exception 异常
      */
     public static Application start(Class<?> primarySource, String[] args) throws Exception {
-        Application application = new Application(primarySource);
-        application.start(args);
+        Application application = new Application(primarySource, args).start();
+        return application;
+    }
+
+    /**
+     * 获取web
+     *
+     * @param primarySource 源
+     * @param args          参数
+     * @throws Exception 异常
+     */
+    public static Application get(Class<?> primarySource, String[] args) throws Exception {
+        Application application = new Application(primarySource, args);
         return application;
     }
 }

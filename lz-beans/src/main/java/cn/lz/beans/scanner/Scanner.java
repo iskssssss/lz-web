@@ -55,7 +55,7 @@ public class Scanner {
 		return controllers;
 	}
 
-	private static boolean isAnnotation(Class<? extends Annotation> source, Class<? extends Annotation> target) {
+	public static boolean isAnnotation(Class<? extends Annotation> source, Class<? extends Annotation> target) {
 		if (source.isAnnotationPresent(target)) {
 			return true;
 		}

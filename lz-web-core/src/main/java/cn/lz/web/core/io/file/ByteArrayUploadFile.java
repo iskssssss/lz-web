@@ -1,6 +1,9 @@
 package cn.lz.web.core.io.file;
 
+import cn.hutool.core.io.FileUtil;
+
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -50,5 +53,17 @@ public class ByteArrayUploadFile implements UploadFile {
     @Override
     public byte[] getBytes() throws IOException {
         return this.bytes;
+    }
+
+    @Override
+    public File saveFile(String savePath, String saveFileName) {
+        InputStream inputStream = this.getInputStream();
+        int length = savePath.length();
+        if (savePath.charAt(length - 1) != '\\' && savePath.charAt(length - 1) != '/' ) {
+            savePath = savePath + File.separator;
+        }
+        File file = FileUtil.touch(savePath + saveFileName);
+        FileUtil.writeFromStream(inputStream, file);
+        return file;
     }
 }

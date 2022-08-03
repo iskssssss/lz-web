@@ -1,5 +1,6 @@
 package cn.lz.web.core.io.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -54,5 +55,14 @@ public interface UploadFile {
      * @throws IOException I/O异常
      */
     byte[] getBytes() throws IOException;
+
+    /**
+     * 保存文件
+     *
+     * @param savePath     保存文件路径
+     * @param saveFileName 保存文件名称
+     * @return 文件
+     */
+    File saveFile(String savePath, String saveFileName);
 }
 

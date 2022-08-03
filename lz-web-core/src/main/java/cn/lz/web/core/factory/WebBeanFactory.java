@@ -1,6 +1,7 @@
 package cn.lz.web.core.factory;
 
 import cn.hutool.core.util.NumberUtil;
+import cn.lz.beans.anno.Value;
 import cn.lz.beans.factory.AbstractBeanFactory;
 import cn.lz.web.core.Application;
 import cn.lz.web.core.environment.Environment;
@@ -23,10 +24,18 @@ public class WebBeanFactory extends AbstractBeanFactory {
     }
 
     @Override
-    protected Object analysisValue(Class<?> type, String valuePath) {
+    protected Object analysisValue(Class<?> type, Value value) {
+        String valuePath = value.value();
+        boolean required = value.required();
         if (valuePath.startsWith("${")) {
             int length = valuePath.length();
-            return toVal(type, this.environment.getVal(valuePath.substring(2, length - 1)));
+            try {
+                Object val = this.environment.getVal(valuePath.substring(2, length - 1));
+                return toVal(type, val);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                if (required)
+                    throw new IllegalArgumentException(illegalArgumentException.getMessage() + "：" + valuePath);
+            }
         }
         return null;
     }
