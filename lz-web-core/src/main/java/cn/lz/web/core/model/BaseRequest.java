@@ -142,4 +142,6 @@ public interface BaseRequest {
 
 	Object[] injectData(Parameter[] parameters);
 
+	Object injectData(Parameter parameter);
+
 }

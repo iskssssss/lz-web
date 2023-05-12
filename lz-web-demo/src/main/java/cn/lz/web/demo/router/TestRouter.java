@@ -1,14 +1,16 @@
-package cn.lz.web.demo.controller;
+package cn.lz.web.demo.router;
 
 import cn.lz.beans.anno.Inject;
 import cn.lz.beans.anno.Value;
 import cn.lz.tool.json.JsonUtil;
 import cn.lz.web.core.anno.params.BodyParam;
+import cn.lz.web.core.anno.params.QueryParam;
 import cn.lz.web.core.anno.router.Router;
 import cn.lz.web.core.anno.router.route.Get;
 import cn.lz.web.core.anno.router.route.Post;
 import cn.lz.web.core.content.LzContentManager;
 import cn.lz.web.core.content.WebContent;
+import cn.lz.web.core.model.HttpRequest;
 import cn.lz.web.demo.config.TestConfiguration;
 import cn.lz.web.demo.config.TestConfiguration2;
 import cn.lz.web.demo.model.LoginModel;
@@ -27,13 +29,13 @@ import java.util.Map;
 public class TestRouter {
 
     @Value("${server.port}")
-    private String port;
+    String port;
 
     @Inject
-    private TestConfiguration testConfiguration;
+    TestConfiguration testConfiguration;
 
     @Inject
-    private TestConfiguration2 testConfiguration2;
+    TestConfiguration2 testConfiguration2;
 
     @Post("/helloWorld")
     public void helloWorld(@BodyParam LoginModel loginModel) {
@@ -59,12 +61,12 @@ public class TestRouter {
     }
 
     @Get("/test")
-    public void testByGet() {
+    public void testByGet(HttpRequest httpRequest, @QueryParam("cookieKey") String cookieKey) {
         WebContent webContent = LzContentManager.get();
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("code", 200);
         resultMap.put("message", "success");
-        resultMap.put("data", "test-get");
+        resultMap.put("data", httpRequest.getCookieValue(cookieKey));
         webContent.sendMessage(JsonUtil.toJsonString(resultMap));
     }
 

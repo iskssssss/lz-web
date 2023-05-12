@@ -49,7 +49,7 @@ public class WebFilter implements LzFilter {
         try {
             Class<?> declaringClass = method.getDeclaringClass();
             String simpleName = declaringClass.getSimpleName();
-            Object invoke = ControllerMethodUtil.invoke(request, routerCore.getRouterObj(simpleName), controllerMethod);
+            Object invoke = ControllerMethodUtil.invoke(request, response, routerCore.getRouterObj(simpleName), controllerMethod);
             if (invoke != null) {
                 if (isReturnBodyAnnotation(method)) {
                     content.sendMessage(JsonUtil.toJsonString(invoke), MediaType.APPLICATION_JSON_VALUE);

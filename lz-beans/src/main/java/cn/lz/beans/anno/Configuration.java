@@ -1,7 +1,5 @@
 package cn.lz.beans.anno;
 
-import cn.lz.beans.anno.Bean;
-
 import java.lang.annotation.*;
 
 /**

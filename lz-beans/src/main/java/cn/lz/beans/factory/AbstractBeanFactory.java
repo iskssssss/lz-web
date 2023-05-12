@@ -92,7 +92,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
             if (!constructor.isAnnotationPresent(Inject.class) && !oneConstructor) {
                 continue;
             }
-            T t = this.newInstance(constructor);
+            T t = this.newInstance(((Constructor<T>) constructor));
             inCreateMap.put(simpleName, t);
             initBean(t);
             inCreateMap.remove(simpleName);
@@ -101,11 +101,10 @@ public abstract class AbstractBeanFactory implements BeanFactory {
         throw new BeanException("[" + tClass.getName() + "] 存在多个构造方法，请为其中一个构造方法添加@Inject注解！");
     }
 
-    private <T> T newInstance(Constructor<?> constructor) throws BeanException {
+    private <T> T newInstance(Constructor<T> constructor) throws BeanException {
         if (constructor.getParameterCount() == 0) {
             try {
-                T t = ((T) constructor.newInstance());
-                return t;
+                return constructor.newInstance();
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 throw new BeanException(e);
             }
@@ -125,8 +124,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
             initArgs[i] = obj;
         }
         try {
-            T t = ((T) constructor.newInstance(initArgs));
-            return t;
+            return constructor.newInstance(initArgs);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new BeanException(e);
         }

@@ -1,4 +1,4 @@
-package cn.lz.web.demo.controller;
+package cn.lz.web.demo.router;
 
 import cn.hutool.core.date.DateUtil;
 import cn.lz.beans.anno.Value;

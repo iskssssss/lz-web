@@ -16,6 +16,8 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.multipart.*;
 
 import java.io.File;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TODO
@@ -35,12 +38,14 @@ public class HttpRequest implements BaseRequest {
     private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE);
 
     private final FullHttpRequest request;
+    private final HttpHeaders headers;
     private final ChannelHandlerContext context;
     private final ByteBuf bodyData;
     private final QueryStringDecoder queryStringDecoder;
 
     private final Map<String, List<String>> parameters;
     private final Map<String, ByteArrayUploadFile> uploadFileMap = new HashMap<>();
+    private final Map<String, Object> attribute = new ConcurrentHashMap<>();
 
     public HttpRequest(ChannelHandlerContext context, FullHttpRequest request) throws IOException {
         this.request = request;
@@ -48,7 +53,7 @@ public class HttpRequest implements BaseRequest {
         this.queryStringDecoder = new QueryStringDecoder(request.uri(), StandardCharsets.UTF_8);
         this.parameters = new HashMap<>(queryStringDecoder.parameters());
         String method = request.method().name();
-        HttpHeaders headers = request.headers();
+        headers = request.headers();
         bodyData = request.content().copy();
         if (method.equals(HttpMethod.POST.name()) && headers.get(HeaderEnums.CONTENT_TYPE).contains("form")) {
             HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(factory, request);
@@ -124,22 +129,23 @@ public class HttpRequest implements BaseRequest {
 
     @Override
     public void setAttribute(String key, Object value) {
-
+        attribute.put(key, value);
     }
 
     @Override
     public Object getAttribute(String key) {
-        return null;
+        return attribute.get(key);
     }
 
     @Override
     public List<String> getAttributeNames() {
-        return null;
+        Set<String> keySet = attribute.keySet();
+        return new ArrayList<>(keySet);
     }
 
     @Override
     public void removeAttribute(String key) {
-
+        attribute.remove(key);
     }
 
     @Override
@@ -150,6 +156,14 @@ public class HttpRequest implements BaseRequest {
 
     @Override
     public String getCookieValue(String name) {
+        String cookieStr = headers.get("Cookie");
+        ServerCookieDecoder cookieDecoder = ServerCookieDecoder.LAX;
+        Set<Cookie> decode = cookieDecoder.decode(cookieStr);
+        for (Cookie cookie : decode) {
+            if (cookie.name().equals(name)) {
+                return cookie.value();
+            }
+        }
         return null;
     }
 
@@ -164,41 +178,44 @@ public class HttpRequest implements BaseRequest {
         return parameters;
     }
 
+    @Override
     public Object[] injectData(Parameter[] parameters) {
         Object[] objects = new Object[parameters.length];
         for (int i = 0; i < objects.length; i++) {
             Parameter parameter = parameters[i];
-            Class<?> type = parameter.getType();
-            FileParam fileParam = parameter.getAnnotation(FileParam.class);
-            if (fileParam != null && type.isAssignableFrom(UploadFile.class)) {
-                ByteArrayUploadFile byteArrayUploadFile = uploadFileMap.get(fileParam.value());
-                objects[i] = byteArrayUploadFile;
-                continue;
-            }
-            QueryParam queryParam = parameter.getAnnotation(QueryParam.class);
-            if (queryParam != null) {
-                List<String> list = this.parameters.get(queryParam.value());
-                if (list == null || list.isEmpty()) {
-                    objects[i] = null;
-                    continue;
-                }
-                if (type.isAssignableFrom(Collection.class)) {
-                    objects[i] = list;
-                } else {
-                    objects[i] = list.get(0);
-                }
-            }
-            BodyParam bodyParam = parameter.getAnnotation(BodyParam.class);
-            if (bodyParam != null) {
-                String body = bodyData.toString(StandardCharsets.UTF_8);
-                final Map<String, Object> map = JsonUtil.parseObject(body.replaceAll("\\r\\n", ""), Map.class);
-                Object o = BeanUtil.toBean(map, type);
-                objects[i] = o;
-            }
+            objects[i] = injectData(parameter);
         }
         return objects;
     }
 
+    @Override
+    public Object injectData(Parameter parameter) {
+        Class<?> type = parameter.getType();
+        FileParam fileParam = parameter.getAnnotation(FileParam.class);
+        if (fileParam != null && type.isAssignableFrom(UploadFile.class)) {
+            ByteArrayUploadFile byteArrayUploadFile = uploadFileMap.get(fileParam.value());
+            return byteArrayUploadFile;
+        }
+        QueryParam queryParam = parameter.getAnnotation(QueryParam.class);
+        if (queryParam != null) {
+            List<String> list = this.parameters.get(queryParam.value());
+            if (list == null || list.isEmpty()) {
+                return null;
+            }
+            if (type.isAssignableFrom(Collection.class)) {
+                return list;
+            }
+            return list.get(0);
+        }
+        BodyParam bodyParam = parameter.getAnnotation(BodyParam.class);
+        if (bodyParam != null) {
+            String body = bodyData.toString(StandardCharsets.UTF_8);
+            final Map<String, Object> map = JsonUtil.parseObject(body.replaceAll("\\r\\n", ""), Map.class);
+            Object o = BeanUtil.toBean(map, type);
+            return o;
+        }
+        return null;
+    }
 
     static {
         DiskFileUpload.deleteOnExitTemporaryFile = true;

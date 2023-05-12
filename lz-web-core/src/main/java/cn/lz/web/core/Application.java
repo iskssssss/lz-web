@@ -97,9 +97,9 @@ public class Application {
         Package aPackage = this.primarySource.getPackage();
         this.scanBean(aPackage.getName());
         this.initRouter();
-        new FastThreadLocalThread(this::_startServer).start();
-        while (startStatus.get() == false) {
-        }
+        FastThreadLocalThread mainThread = new FastThreadLocalThread(this::_startServer);
+        mainThread.start();
+        while (!startStatus.get()) { }
         logger.info("start success - port:" + this.port);
         URL resource = this.primarySource.getResource(Environment.BANNER_PATH);
         if (resource == null) {
@@ -171,6 +171,7 @@ public class Application {
             this.beanFactory.createBean(aClass, aClass.getSimpleName());
         }
     }
+
     /**
      * 初始化路由信息
      */
@@ -199,6 +200,7 @@ public class Application {
             e.printStackTrace();
         }
     }
+
     /**
      * 关闭
      */

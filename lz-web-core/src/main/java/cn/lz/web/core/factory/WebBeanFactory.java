@@ -33,8 +33,9 @@ public class WebBeanFactory extends AbstractBeanFactory {
                 Object val = this.environment.getVal(valuePath.substring(2, length - 1));
                 return toVal(type, val);
             } catch (IllegalArgumentException illegalArgumentException) {
-                if (required)
+                if (required) {
                     throw new IllegalArgumentException(illegalArgumentException.getMessage() + "：" + valuePath);
+                }
             }
         }
         return null;

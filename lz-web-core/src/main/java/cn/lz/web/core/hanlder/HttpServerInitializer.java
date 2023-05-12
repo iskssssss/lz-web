@@ -19,12 +19,10 @@ import io.netty.handler.stream.ChunkedWriteHandler;
  */
 public class HttpServerInitializer  extends ChannelInitializer<SocketChannel> {
 
-    private final Application application;
     private final HttpServerHandler httpServerHandler;
 
     public HttpServerInitializer(Application application) {
-        this.application = application;
-        this.httpServerHandler = new HttpServerHandler(this.application);
+        this.httpServerHandler = new HttpServerHandler(application);
     }
 
     @Override
