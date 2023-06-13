@@ -5,7 +5,7 @@ import cn.lz.beans.anno.Value;
 import cn.lz.tool.json.JsonUtil;
 import cn.lz.web.core.anno.params.BodyParam;
 import cn.lz.web.core.anno.params.QueryParam;
-import cn.lz.web.core.anno.router.Router;
+import cn.lz.web.core.anno.router.BodyRouter;
 import cn.lz.web.core.anno.router.route.Get;
 import cn.lz.web.core.anno.router.route.Post;
 import cn.lz.web.core.content.LzContentManager;
@@ -14,6 +14,7 @@ import cn.lz.web.core.model.HttpRequest;
 import cn.lz.web.demo.config.TestConfiguration;
 import cn.lz.web.demo.config.TestConfiguration2;
 import cn.lz.web.demo.model.LoginModel;
+import cn.lz.web.demo.vo.R;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @version 版权 Copyright(c)2022 LZJ
  * @date 2022/7/6 15:24
  */
-@Router("/api/test")
+@BodyRouter("/api/test")
 public class TestRouter {
 
     @Value("${server.port}")
@@ -63,11 +64,15 @@ public class TestRouter {
     @Get("/test")
     public void testByGet(HttpRequest httpRequest, @QueryParam("cookieKey") String cookieKey) {
         WebContent webContent = LzContentManager.get();
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("code", 200);
-        resultMap.put("message", "success");
-        resultMap.put("data", httpRequest.getCookieValue(cookieKey));
-        webContent.sendMessage(JsonUtil.toJsonString(resultMap));
+        String cookieValue = httpRequest.getCookieValue(cookieKey);
+        R<String> result = R.success(cookieValue);
+        webContent.sendMessage(JsonUtil.toJsonString(result));
+    }
+
+    @Get("/test/return")
+    public R<String> testReturnByGet(HttpRequest httpRequest, @QueryParam("cookieKey") String cookieKey) {
+        String cookieValue = httpRequest.getCookieValue(cookieKey);
+        return R.success(cookieValue);
     }
 
     @Get("/error")

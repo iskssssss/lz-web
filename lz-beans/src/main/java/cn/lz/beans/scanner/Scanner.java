@@ -68,7 +68,10 @@ public class Scanner {
 					annotationType.isAssignableFrom(Target.class)) {
 				continue;
 			}
-			return isAnnotation(annotationType, target);
+			boolean exist = isAnnotation(annotationType, target);
+			if (exist) {
+				return true;
+			}
 		}
 		return false;
 	}

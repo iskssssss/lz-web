@@ -51,11 +51,12 @@ public class WebFilter implements LzFilter {
             String simpleName = declaringClass.getSimpleName();
             Object invoke = ControllerMethodUtil.invoke(request, response, routerCore.getRouterObj(simpleName), controllerMethod);
             if (invoke != null) {
+                String msg = JsonUtil.toJsonString(invoke);
                 if (isReturnBodyAnnotation(method)) {
-                    content.sendMessage(JsonUtil.toJsonString(invoke), MediaType.APPLICATION_JSON_VALUE);
+                    content.sendMessage(msg, MediaType.TEXT_PLAIN_VALUE);
                     return;
                 }
-                content.sendMessage("", MediaType.TEXT_PLAIN_VALUE);
+                content.sendMessage(msg, MediaType.TEXT_HTML_VALUE);
             }
         } catch (InvocationTargetException | IllegalAccessException e) {
             Throwable throwable = Optional.ofNullable(e.getCause()).orElse(e);
@@ -68,22 +69,30 @@ public class WebFilter implements LzFilter {
     }
 
     private boolean isReturnBodyAnnotation(AccessibleObject obj) {
-        Class<?> aClass = obj.getClass();
-        boolean annotation = Scanner.isAnnotation((Class<? extends Annotation>) aClass, ReturnBody.class);
-        if (annotation) {
+        boolean exist = isReturnBodyAnnotationMethod(obj);
+        if (exist) {
             return true;
         }
         Class<?> declaringClass = null;
         if (obj instanceof Method) {
             declaringClass = ((Method) obj).getDeclaringClass();
         }
-        if (obj instanceof Field) {
-            declaringClass = ((Field) obj).getDeclaringClass();
-        }
         if (declaringClass == null) {
             return false;
         }
-        annotation = Scanner.isAnnotation((Class<? extends Annotation>) declaringClass, ReturnBody.class);
+        exist = Scanner.isAnnotation((Class<? extends Annotation>) declaringClass, ReturnBody.class);
+        return exist;
+    }
+
+    private boolean isReturnBodyAnnotationMethod(AccessibleObject obj) {
+        Method method = null;
+        if (obj instanceof Method) {
+            method = ((Method) obj);
+        }
+        if (method == null) {
+            return false;
+        }
+        boolean annotation = method.isAnnotationPresent(ReturnBody.class);
         return annotation;
     }
 }
