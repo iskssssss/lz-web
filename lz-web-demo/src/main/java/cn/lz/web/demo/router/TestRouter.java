@@ -75,6 +75,12 @@ public class TestRouter {
         return R.success(cookieValue);
     }
 
+    @Get("/test/return/2")
+    public R<String> testReturnByGet2(HttpRequest httpRequest, @QueryParam("cookieKey") String cookieKey) {
+        String cookieValue = httpRequest.getCookieValue(cookieKey);
+        return R.success(cookieValue);
+    }
+
     @Get("/error")
     public void error() {
         throw new SecurityException("123");
