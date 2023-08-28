@@ -13,6 +13,8 @@
         <module>lz-web-core</module>
         <module>lz-web-demo</module>
         <module>lz-beans</module>
+        <module>lz-web-plugins</module>
+        <module>lz-web-plugins/lz-web-mybatis-plugins</module>
     </modules>
 
     <properties>

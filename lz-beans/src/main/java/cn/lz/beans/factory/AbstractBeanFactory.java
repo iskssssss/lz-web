@@ -61,9 +61,6 @@ public abstract class AbstractBeanFactory implements BeanFactory {
     @Override
     public Object getBean(String beanName) {
         Object bean = beans.get(beanName);
-        if (bean == null) {
-            return null;
-        }
         return bean;
     }
 
@@ -84,7 +81,7 @@ public abstract class AbstractBeanFactory implements BeanFactory {
     private <T> T newInstance(Class<T> tClass) throws BeanException {
         String simpleName = tClass.getSimpleName();
         if (inCreateMap.containsKey(simpleName)) {
-            throw new RuntimeException("循环引用");
+            throw new BeanException("循环引用");
         }
         final Constructor<?>[] constructors = tClass.getConstructors();
         boolean oneConstructor = constructors.length == 1;
